@@ -8,19 +8,32 @@ Claude Skills 是 Claude Code 的扩展能力，通过 Markdown 文件定义特�
 
 ## 安装使用
 
-### 方法一：全局安装
+### 方法一：一键安装（推荐）
+
+使用 `npx skills add` 命令一键安装：
+
+```bash
+npx skills add free-ride-car/fun-skills
+```
+
+**可选参数：**
+- 指定安装到 Claude Code：`npx skills add free-ride-car/fun-skills -a claude-code`
+- 仅安装特定 skill：`npx skills add free-ride-car/fun-skills --skill weekly-report`
+- 查看可用 skills：`npx skills add free-ride-car/fun-skills --list`
+
+### 方法二：全局安装
 
 将 skills 目录复制到 Claude 配置目录：
 
 ```bash
-# Windows
-cp -r skills/* ~/.claude/skills/skills/
-
 # macOS/Linux
-cp -r skills/* ~/.claude/skills/skills/
+cp -r skills/* ~/.claude/skills/
+
+# Windows (PowerShell)
+Copy-Item -Recurse skills\* $env:USERPROFILE\.claude\skills\
 ```
 
-### 方法二：项目级安装
+### 方法三：项目级安装
 
 将 skills 目录复制到项目的 `.claude/skills/` 目录下。
 
@@ -29,6 +42,7 @@ cp -r skills/* ~/.claude/skills/skills/
 | Skill 名称 | 描述 | 使用场景 |
 |-----------|------|---------|
 | [weekly-report](skills/weekly-report/SKILL.md) | 周报生成器 | 根据 Git 提交记录自动生成工作周报 |
+| [api-codegen](skills/api-codegen/SKILL.md) | API 接口封装 | 根据接口 URL 自动生成 TypeScript 代码 |
 
 ## Skill 文件结构
 
