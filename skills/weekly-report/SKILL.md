@@ -3,7 +3,7 @@ name: weekly-report
 description: 根据 Git 提交记录和代码变更自动生成个人周报。当用户要求生成周报、工作总结、或者汇总本周工作内容时使用此 skill。支持自定义时间范围、提交人过滤、输出格式和详细程度。
 metadata:
   author: zhoujianting
-  version: "1.0"
+  version: "1.1"
 ---
 
 # 周报生成器 (Weekly Report Generator)
@@ -32,9 +32,13 @@ metadata:
 **用户**: 帮我生成本周的周报
 
 **助手**:
-> 检测到当前 Git 用户为 **zhangsan**，将为该用户生成周报，确认吗？
+> 检测到当前 Git 用户为 **zhangsan** (zhangsan@example.com)
+>
+> 请确认以下选项：
+> 1. 是否为该用户生成周报？或指定其他用户名/邮箱？
+> 2. 请选择周报详细程度：简洁版 / 标准版 / 详细版？
 
-**用户**: 确认
+**用户**: 确认，标准版
 
 **助手**: 正在收集提交记录...
 （按 [输出格式](./references/output-format.md) 生成周报）
