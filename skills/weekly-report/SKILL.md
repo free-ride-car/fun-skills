@@ -1,6 +1,9 @@
 ---
 name: weekly-report
 description: 根据 Git 提交记录和代码变更自动生成个人周报。当用户要求生成周报、工作总结、或者汇总本周工作内容时使用此 skill。支持自定义时间范围、提交人过滤、输出格式和详细程度。
+metadata:
+  author: zhoujianting
+  version: "1.0"
 ---
 
 # 周报生成器 (Weekly Report Generator)
@@ -106,12 +109,13 @@ git log --since="7 days ago" --author="用户名" --format="%ad" --date=short | 
 
 ## 周报输出格式
 
+**重要**：最终输出必须是 Markdown 格式，主要工作内容使用有序列表（1. 2. 3. 4.）。
+
 ```markdown
 # 工作周报
 
 **报告周期**: YYYY-MM-DD ~ YYYY-MM-DD
 **报告人**: [指定的用户名]
-**邮箱**: [用户邮箱]
 **项目**: [项目名称]
 
 ---
@@ -130,19 +134,23 @@ git log --since="7 days ago" --author="用户名" --format="%ad" --date=short | 
 
 ## 🎯 主要工作内容
 
-### 🚀 新功能开发
-- [功能描述1] (commit hash)
-- [功能描述2] (commit hash)
+1. **[工作项标题1]**
+   - 详细描述该工作项的内容
+   - 涉及的主要改动点
+   - (commit: abc1234)
 
-### 🐛 问题修复
-- [问题描述1] (commit hash)
-- [问题描述2] (commit hash)
+2. **[工作项标题2]**
+   - 详细描述该工作项的内容
+   - 涉及的主要改动点
+   - (commit: def5678)
 
-### ♻️ 代码优化
-- [优化描述1] (commit hash)
+3. **[工作项标题3]**
+   - 详细描述该工作项的内容
+   - (commit: ghi9012)
 
-### 📝 其他工作
-- [其他工作描述]
+4. **[工作项标题4]**
+   - 详细描述该工作项的内容
+   - (commit: jkl3456)
 
 ---
 
@@ -152,17 +160,6 @@ git log --since="7 days ago" --author="用户名" --format="%ad" --date=short | 
 |-----------|-----------|------|
 | src/components | X | 组件开发 |
 | src/pages | X | 页面更新 |
-
----
-
-## 📅 每日工作记录
-
-### YYYY-MM-DD (周X)
-- commit message 1
-- commit message 2
-
-### YYYY-MM-DD (周X)
-- commit message 1
 
 ---
 
@@ -244,7 +241,56 @@ git log --since="7 days ago" --author="用户名" --format="%ad" --date=short | 
 **用户**: 确认
 
 **助手**: 正在收集 zhoujianting 的提交记录...
-[生成周报]
+
+---
+
+# 工作周报
+
+**报告周期**: 2025-01-20 ~ 2025-01-26
+**报告人**: zhoujianting
+**项目**: my-project
+
+## 📊 本周概览
+
+| 指标 | 数据 |
+|------|------|
+| 提交次数 | 12 次 |
+| 修改文件 | 25 个 |
+| 新增代码 | +580 行 |
+| 删除代码 | -120 行 |
+| 活跃天数 | 5 天 |
+
+## 🎯 主要工作内容
+
+1. **用户登录模块重构**
+   - 重构登录页面组件，优化用户体验
+   - 添加记住密码功能
+   - (commit: a1b2c3d)
+
+2. **修复订单列表分页问题**
+   - 解决分页数据不刷新的 bug
+   - 优化分页组件性能
+   - (commit: e4f5g6h)
+
+3. **新增数据导出功能**
+   - 支持 Excel 和 CSV 格式导出
+   - 添加导出进度提示
+   - (commit: i7j8k9l)
+
+4. **更新项目文档**
+   - 补充 API 接口文档
+   - 更新部署说明
+   - (commit: m0n1o2p)
+
+## 📁 主要变更模块
+
+| 模块/目录 | 变更文件数 | 说明 |
+|-----------|-----------|------|
+| src/pages/login | 5 | 登录模块重构 |
+| src/components | 8 | 组件优化 |
+| src/services | 4 | 接口调整 |
+
+---
 
 ### 示例 2：指定用户
 
