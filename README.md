@@ -60,6 +60,9 @@ skills/
 ---
 name: skill-name
 description: Skill 的简短描述
+metadata:
+  author: xxx
+  version: "1.0"
 ---
 
 # Skill 标题

@@ -10,6 +10,9 @@
 ---
 name: your-skill-name
 description: 简短描述这个 skill 的功能。当用户请求相关任务时，Claude 会根据此描述判断是否激活该 skill。
+metadata:
+  author: xxx
+  version: "1.0"
 ---
 
 # Skill 名称
