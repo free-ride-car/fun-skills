@@ -41,8 +41,8 @@ Copy-Item -Recurse skills\* $env:USERPROFILE\.claude\skills\
 
 | Skill 名称 | 描述 | 使用场景 |
 |-----------|------|---------|
+| [git](skills/git/skill.md) | 智能代码提交助手 | 自动分析变更生成提交信息，支持本地提交和远程推送 |
 | [weekly-report](skills/weekly-report/SKILL.md) | 周报生成器 | 根据 Git 提交记录自动生成工作周报 |
-| [api-codegen](skills/api-codegen/SKILL.md) | API 接口封装 | 根据接口 URL 自动生成 TypeScript 代码 |
 
 ## Skill 文件结构
 
