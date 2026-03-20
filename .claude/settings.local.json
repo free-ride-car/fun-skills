@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(tasklist)",
+      "Bash(findstr chrome:*)",
+      "Bash(node -e \"const CDP = require\\(''chrome-remote-interface''\\); CDP.Version\\({ port: 9222 }\\).then\\(v => console.log\\(''Connected:'', v.Browser\\)\\).catch\\(e => { console.log\\(''Not connected''\\); }\\)\")",
+      "Bash(node:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npm search:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(npx skills:*)",
+      "Bash(git clone:*)",
+      "Bash(test -f \"$HOME/.baoyu-skills/baoyu-xhs-images/EXTEND.md\")",
+      "Bash(test -f \"$HOME/.baoyu-skills/baoyu-image-gen/EXTEND.md\")",
+      "Bash(git add:*)"
+    ]
+  }
+}

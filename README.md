@@ -41,6 +41,8 @@ Copy-Item -Recurse skills\* $env:USERPROFILE\.claude\skills\
 
 | Skill 名称 | 描述 | 使用场景 |
 |-----------|------|---------|
+| [chrome-browser](skills/chrome-browser/SKILL.md) | 浏览器自动化 | 基于 Chrome DevTools MCP 的浏览器操作、网页自动化 |
+| [chrome-crawler](skills/chrome-crawler/SKILL.md) | 网页数据采集 | 使用 CDP 访问网页并提取数据 |
 | [git](skills/git/skill.md) | 智能代码提交助手 | 自动分析变更生成提交信息，支持本地提交和远程推送 |
 | [weekly-report](skills/weekly-report/SKILL.md) | 周报生成器 | 根据 Git 提交记录自动生成工作周报 |
 
