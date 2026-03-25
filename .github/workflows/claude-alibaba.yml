@@ -26,38 +26,37 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Get context
         id: context
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          EVENT_PAYLOAD: ${{ toJson(github.event) }}
         run: |
           # 提取用户消息和上下文
-          if [ "$EVENT_NAME" = "issue_comment" ]; then
+          if [ "${{ github.event_name }}" = "issue_comment" ]; then
             MESSAGE='${{ github.event.comment.body }}'
             ISSUE_NUMBER='${{ github.event.issue.number }}'
             ISSUE_TITLE='${{ github.event.issue.title }}'
             ISSUE_BODY='${{ github.event.issue.body }}'
-            REPO='${{ github.repository }}'
-          elif [ "$EVENT_NAME" = "issues" ]; then
+            PR_NUMBER=""
+          elif [ "${{ github.event_name }}" = "issues" ]; then
             MESSAGE='${{ github.event.issue.body }}'
             ISSUE_NUMBER='${{ github.event.issue.number }}'
             ISSUE_TITLE='${{ github.event.issue.title }}'
             ISSUE_BODY='${{ github.event.issue.body }}'
-            REPO='${{ github.repository }}'
-          elif [ "$EVENT_NAME" = "pull_request_review_comment" ]; then
+            PR_NUMBER=""
+          elif [ "${{ github.event_name }}" = "pull_request_review_comment" ]; then
             MESSAGE='${{ github.event.comment.body }}'
             ISSUE_NUMBER='${{ github.event.pull_request.number }}'
             ISSUE_TITLE='${{ github.event.pull_request.title }}'
             ISSUE_BODY='${{ github.event.pull_request.body }}'
-            REPO='${{ github.repository }}'
-          elif [ "$EVENT_NAME" = "pull_request_review" ]; then
+            PR_NUMBER='${{ github.event.pull_request.number }}'
+          elif [ "${{ github.event_name }}" = "pull_request_review" ]; then
             MESSAGE='${{ github.event.review.body }}'
             ISSUE_NUMBER='${{ github.event.pull_request.number }}'
             ISSUE_TITLE='${{ github.event.pull_request.title }}'
             ISSUE_BODY='${{ github.event.pull_request.body }}'
-            REPO='${{ github.repository }}'
+            PR_NUMBER='${{ github.event.pull_request.number }}'
           fi
 
           # 移除 @claude 触发词
@@ -67,66 +66,212 @@ jobs:
           echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
           echo "issue_title=$ISSUE_TITLE" >> $GITHUB_OUTPUT
           echo "issue_body=$ISSUE_BODY" >> $GITHUB_OUTPUT
-          echo "repo=$REPO" >> $GITHUB_OUTPUT
-          echo "event_name=$EVENT_NAME" >> $GITHUB_OUTPUT
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "event_name=${{ github.event_name }}" >> $GITHUB_OUTPUT
 
-      - name: Call Alibaba Cloud GLM API
-        id: llm
+      - name: Analyze request and plan changes
+        id: plan
         env:
           DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
         run: |
           MESSAGE='${{ steps.context.outputs.message }}'
           ISSUE_TITLE='${{ steps.context.outputs.issue_title }}'
           ISSUE_BODY='${{ steps.context.outputs.issue_body }}'
+          PR_NUMBER='${{ steps.context.outputs.pr_number }}'
+          EVENT_NAME='${{ steps.context.outputs.event_name }}'
 
-          # 构建 prompt
-          SYSTEM_PROMPT="你是一个有帮助的 AI 助手。用户会在 GitHub Issue 或 PR 中提及你来请求帮助。请用中文友好地回复用户的问题。"
+          # 获取仓库文件结构
+          FILE_TREE=$(find . -type f -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" -o -name "*.py" -o -name "*.java" -o -name "*.go" -o -name "*.rs" 2>/dev/null | grep -v node_modules | grep -v .git | head -50)
 
-          USER_PROMPT="GitHub Issue/PR 标题: $ISSUE_TITLE
+          # 如果是 PR，获取 diff
+          if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "" ]; then
+            PR_DIFF=$(gh pr diff "$PR_NUMBER" --repo "${{ github.repository }}" 2>/dev/null || echo "")
+          else
+            PR_DIFF=""
+          fi
 
-          GitHub Issue/PR 内容:
-          $ISSUE_BODY
+          # 构建系统提示
+          SYSTEM_PROMPT='你是一个专业的代码助手。用户会在 GitHub Issue 或 PR 中请求你修改代码。
 
-          用户请求: $MESSAGE"
+你需要分析用户的请求，然后返回一个 JSON 对象来描述你计划做的修改。
 
-          # 调用百炼 API (OpenAI 兼容模式)
-          RESPONSE=$(curl -s -X POST "https://coding.dashscope.aliyuncs.com/v1/chat/completions" \
+返回格式（必须是合法的 JSON）：
+{
+  "needs_code_changes": true/false,
+  "branch_name": "claude/fix-xxx",
+  "commit_message": "简短的提交信息",
+  "pr_title": "PR 标题",
+  "pr_body": "PR 描述",
+  "files_to_modify": [
+    {
+      "path": "文件路径",
+      "action": "create|modify|delete",
+      "content": "完整的文件内容（如果需要修改整个文件）"
+    }
+  ],
+  "reply": "给用户的回复（如果不需要修改代码，只返回这个字段）"
+}
+
+重要规则：
+1. 如果用户只是提问或讨论，设置 needs_code_changes: false 并在 reply 中回复
+2. branch_name 应该简洁且描述性强，使用 claude/ 前缀
+3. 文件内容必须是完整的，不要使用占位符
+4. 只返回 JSON，不要有其他文字
+5. 所有文件路径必须相对于仓库根目录'
+
+          # 构建用户提示
+          USER_PROMPT="GitHub 仓库: ${{ github.repository }}
+分支: ${{ github.ref_name }}
+
+Issue/PR 标题: $ISSUE_TITLE
+
+Issue/PR 内容:
+$ISSUE_BODY
+
+$(if [ -n "$PR_DIFF" ]; then echo "当前 PR 的变更:"; echo "$PR_DIFF" | head -200; fi)
+
+仓库主要文件:
+$FILE_TREE
+
+用户请求: $MESSAGE"
+
+          # 调用 Qwen API
+          RESPONSE=$(curl -s -X POST "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions" \
             -H "Authorization: Bearer $DASHSCOPE_API_KEY" \
             -H "Content-Type: application/json" \
             -d "{
-              \"model\": \"glm-5\",
+              \"model\": \"qwen3-max-2026-01-23\",
               \"messages\": [
-                {\"role\": \"system\", \"content\": \"$SYSTEM_PROMPT\"},
-                {\"role\": \"user\", \"content\": \"$USER_PROMPT\"}
+                {\"role\": \"system\", \"content\": $(echo "$SYSTEM_PROMPT" | jq -Rs .)},
+                {\"role\": \"user\", \"content\": $(echo "$USER_PROMPT" | jq -Rs .)}
               ],
-              \"max_tokens\": 2048
+              \"max_tokens\": 8192,
+              \"temperature\": 0.3
             }")
 
           # 提取回复内容
-          CONTENT=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // "抱歉，生成回复时出现错误。"')
+          CONTENT=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty')
 
-          # 保存回复到文件（处理多行内容）
-          echo "$CONTENT" > /tmp/response.txt
+          # 尝试提取 JSON（处理 markdown 代码块）
+          JSON_CONTENT=$(echo "$CONTENT" | sed -n '/^{/,/^}/p' || echo "$CONTENT")
+          JSON_CONTENT=$(echo "$JSON_CONTENT" | sed 's/^```json//;s/^```//;s/```$//')
 
-          echo "response_file=/tmp/response.txt" >> $GITHUB_OUTPUT
+          # 保存到文件
+          echo "$JSON_CONTENT" > /tmp/plan.json
+          echo "$CONTENT" > /tmp/raw_response.txt
 
-      - name: Post comment
+          echo "plan_file=/tmp/plan.json" >> $GITHUB_OUTPUT
+
+          # 检查是否需要代码修改
+          NEEDS_CHANGES=$(echo "$JSON_CONTENT" | jq -r '.needs_code_changes // false')
+          echo "needs_changes=$NEEDS_CHANGES" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Post initial reply
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const response = fs.readFileSync('/tmp/response.txt', 'utf8');
+            const planFile = '/tmp/plan.json';
+
+            let plan = {};
+            try {
+              plan = JSON.parse(fs.readFileSync(planFile, 'utf8'));
+            } catch (e) {
+              plan = { needs_code_changes: false, reply: '抱歉，处理请求时出现错误。' };
+            }
 
             const issueNumber = '${{ steps.context.outputs.issue_number }}';
-            const eventName = '${{ steps.context.outputs.event_name }}';
+            let response = '';
 
-            // 添加签名
-            const fullResponse = response + '\n\n---\n_Powered by Alibaba Cloud GLM-5_';
+            if (plan.needs_code_changes) {
+              response = `🔄 正在处理您的请求...\n\n**计划**: ${plan.pr_title || '代码修改'}\n\n我将创建一个 PR 来实现这些更改。`;
+            } else {
+              response = plan.reply || '我理解了您的请求。';
+            }
 
-            // 发布评论
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: parseInt(issueNumber),
-              body: fullResponse
+              body: response + '\n\n---\n_Powered by Qwen (Alibaba Cloud)_'
+            });
+
+      - name: Apply code changes
+        if: steps.plan.outputs.needs_changes == 'true'
+        run: |
+          # 读取计划
+          PLAN=$(cat /tmp/plan.json)
+
+          # 创建分支
+          BRANCH_NAME=$(echo "$PLAN" | jq -r '.branch_name')
+          git checkout -b "$BRANCH_NAME"
+
+          # 应用文件修改
+          echo "$PLAN" | jq -c '.files_to_modify[]' | while read -r file; do
+            PATH=$(echo "$file" | jq -r '.path')
+            ACTION=$(echo "$file" | jq -r '.action')
+            CONTENT=$(echo "$file" | jq -r '.content')
+
+            # 创建目录（如果需要）
+            DIR=$(dirname "$PATH")
+            mkdir -p "$DIR"
+
+            case "$ACTION" in
+              create|modify)
+                echo "$CONTENT" > "$PATH"
+                echo "Modified: $PATH"
+                ;;
+              delete)
+                rm -f "$PATH"
+                echo "Deleted: $PATH"
+                ;;
+            esac
+          done
+
+          # 配置 git
+          git config user.name "Claude (Qwen)"
+          git config user.email "claude-bot@users.noreply.github.com"
+
+          # 提交
+          COMMIT_MSG=$(echo "$PLAN" | jq -r '.commit_message')
+          git add -A
+          git commit -m "$COMMIT_MSG" || echo "No changes to commit"
+
+          # 推送分支
+          git push origin "$BRANCH_NAME"
+
+          # 保存分支名供下一步使用
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: steps.plan.outputs.needs_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = JSON.parse(fs.readFileSync('/tmp/plan.json', 'utf8'));
+
+            const branchName = plan.branch_name;
+            const prTitle = plan.pr_title || 'Changes by Claude';
+            const prBody = plan.pr_body || 'Automated changes by Claude (Qwen)';
+
+            // 创建 PR
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: prTitle,
+              head: branchName,
+              base: '${{ github.ref_name }}',
+              body: prBody + '\n\n---\n_Powered by Qwen (Alibaba Cloud)_'
+            });
+
+            // 在原 Issue/PR 中评论
+            const issueNumber = '${{ steps.context.outputs.issue_number }}';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt(issueNumber),
+              body: `✅ 已创建 PR #${pr.data.number} 来实现您请求的更改。\n\n${pr.data.html_url}\n\n---\n_Powered by Qwen (Alibaba Cloud)_`
             });

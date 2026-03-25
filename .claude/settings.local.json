@@ -17,7 +17,11 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Read(//c/Users/NPC-347/.agents/skills/baoyu-url-to-markdown/**)",
-      "Bash(npx -y bun scripts/main.ts \"https://www.bilibili.com/video/BV1DePQzRE5a/?spm_id_from=333.1387.homepage.video_card.click&vd_source=b190c928132dfe441058605d143b9104\" --timeout 60000)"
+      "Bash(npx -y bun scripts/main.ts \"https://www.bilibili.com/video/BV1DePQzRE5a/?spm_id_from=333.1387.homepage.video_card.click&vd_source=b190c928132dfe441058605d143b9104\" --timeout 60000)",
+      "Bash(git push:*)",
+      "Bash(gh issue:*)",
+      "Bash(curl -s \"https://api.github.com/repos/free-ride-car/fun-skills/actions/runs?per_page=5\")",
+      "Bash(curl -s \"https://api.github.com/repos/free-ride-car/fun-skills/actions/runs?per_page=10\")"
     ]
   }
 }
