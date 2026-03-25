@@ -140,7 +140,7 @@ $FILE_TREE
             -H "Authorization: Bearer $DASHSCOPE_API_KEY" \
             -H "Content-Type: application/json" \
             -d "{
-              \"model\": \"qwen3-max-2026-01-23\",
+              \"model\": \"glm-5\",
               \"messages\": [
                 {\"role\": \"system\", \"content\": $(echo "$SYSTEM_PROMPT" | jq -Rs .)},
                 {\"role\": \"user\", \"content\": $(echo "$USER_PROMPT" | jq -Rs .)}
