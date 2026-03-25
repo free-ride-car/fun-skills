@@ -90,7 +90,7 @@ jobs:
           用户请求: $MESSAGE"
 
           # 调用百炼 API (OpenAI 兼容模式)
-          RESPONSE=$(curl -s -X POST "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions" \
+          RESPONSE=$(curl -s -X POST "https://coding.dashscope.aliyuncs.com/v1/chat/completions" \
             -H "Authorization: Bearer $DASHSCOPE_API_KEY" \
             -H "Content-Type: application/json" \
             -d "{
