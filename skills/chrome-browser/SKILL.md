@@ -12,8 +12,9 @@ metadata:
 
 ## 前置条件
 
-- **Chrome 浏览器**：需要安装 Google Chrome
-- **chrome-devtools-mcp**：MCP 服务，提供 CDP 能力
+- **Chrome 浏览器**：Google Chrome 90+ 或 Chromium
+- **MCP 服务**：`@anthropic-ai/chrome-devtools-mcp` (推荐最新版)
+- **Node.js**：18+ (运行 MCP 服务)
 
 > 详细安装步骤请参考 [安装指南](./references/installation.md)。
 
